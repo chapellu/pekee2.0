@@ -103,13 +103,13 @@ void LSM6::enableDefault(void)
 
 		// 0x80 = 0b10000000
 		// ODR = 1000 (1.66 kHz (high performance)); FS_XL = 00 (+/-2 g full scale)
-		writeReg(CTRL1_XL, accelerometer_init(1660,2));
+		writeReg(CTRL1_XL, initAcc(1660,2));
 
 		// Gyro
 
 		// 0x80 = 0b010000000
 		// ODR = 1000 (1.66 kHz (high performance)); FS_XL = 00 (245 dps)
-		writeReg(CTRL2_G, gyroscope_init(1660,245));
+		writeReg(CTRL2_G, initGyro(1660,245));
 
 		// Common
 
@@ -167,9 +167,18 @@ void LSM6::readAcc(void)
 	uint8_t zha = Wire.read();
 
 	// combine high and low bytes
-	a.x = (int16_t)(xha << 8 | xla);
-	a.y = (int16_t)(yha << 8 | yla);
-	a.z = (int16_t)(zha << 8 | zla);
+	a.x = (int16_t)(xha << 8 | xla) + aZero.x;
+	a.y = (int16_t)(yha << 8 | yla)	+ aZero.y;
+	a.z = (int16_t)(zha << 8 | zla) + aZero.z;
+}
+
+// Reads the 3 acc channels and stores them in vector aZero as negative
+void LSM6::zeroAcc(void)
+{
+	readAcc();
+	aZero.x = -a.x;
+	aZero.y = -a.y;
+	aZero.z = -a.z;
 }
 
 // Reads the 3 gyro channels and stores them in vector g
@@ -198,9 +207,18 @@ void LSM6::readGyro(void)
 	uint8_t zhg = Wire.read();
 
 	// combine high and low bytes
-	g.x = (int16_t)(xhg << 8 | xlg);
-	g.y = (int16_t)(yhg << 8 | ylg);
-	g.z = (int16_t)(zhg << 8 | zlg);
+	g.x = (int16_t)(xhg << 8 | xlg) + gZero.x;
+	g.y = (int16_t)(yhg << 8 | ylg) + gZero.y;
+	g.z = (int16_t)(zhg << 8 | zlg) + gZero.z;
+}
+
+// Reads the 3 gyro channels and stores them in vector gZero as negative
+void LSM6::zeroGyro(void)
+{
+	readGyro();
+	gZero.x = -g.x;
+	gZero.y = -g.y;
+	gZero.z = -g.z;
 }
 
 // Reads all 6 channels of the LSM6 and stores them in the object variables
@@ -208,6 +226,12 @@ void LSM6::read(void)
 {
 	readAcc();
 	readGyro();
+}
+
+void LSM6::zeros(void)
+{
+	zeroAcc();
+	zeroGyro();
 }
 
 void LSM6::vector_normalize(vector<float> *a)
@@ -218,7 +242,7 @@ void LSM6::vector_normalize(vector<float> *a)
 	a->z /= mag;
 }
 
-uint8_t LSM6::accelerometer_init(int frequency = 0, int sensibility = 0, int filter = 0) {
+uint8_t LSM6::initAcc(int frequency = 0, int sensibility = 0, int filter = 0) {
 	int8_t ctrl1_xl = 0b00000000;
 	switch (frequency)
 	{
@@ -289,10 +313,10 @@ uint8_t LSM6::accelerometer_init(int frequency = 0, int sensibility = 0, int fil
 	default:
 		break;
 	}
-	return (ctrl1_x1);
+	return (ctrl1_xl);
 }
 
-uint8_t LSM6::gyroscope_init(int frequency = 0, int sensibility = 0) {
+uint8_t LSM6::initGyro(int frequency = 0, int sensibility = 0) {
 	int8_t ctrl2_g = 0b00000000;
 	switch (frequency)
 	{

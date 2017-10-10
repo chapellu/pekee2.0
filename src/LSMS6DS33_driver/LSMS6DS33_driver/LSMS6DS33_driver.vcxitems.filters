@@ -12,10 +12,10 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="$(MSBuildThisFileDirectory)readme.txt" />
+    <Text Include="$(MSBuildThisFileDirectory)..\..\..\Librairies\lsm6-arduino-master\keywords.txt" />
     <Text Include="D:\Ludovic\Documents\pekee2.0\src\LSMS6DS33_driver\LSMS6DS33_driver\LSM6.h">
       <Filter>Header Files</Filter>
     </Text>
-    <Text Include="$(MSBuildThisFileDirectory)..\..\..\Librairies\lsm6-arduino-master\keywords.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="D:\Ludovic\Documents\pekee2.0\src\LSMS6DS33_driver\LSMS6DS33_driver\LSM6.cpp">
