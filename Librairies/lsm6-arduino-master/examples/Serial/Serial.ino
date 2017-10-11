@@ -32,6 +32,14 @@ void setup()
     while (1);
   }
   imu.enableDefault();
+  imu.read();
+
+  snprintf(report, sizeof(report), "A: %6d %6d %6d    G: %6d %6d %6d",
+    imu.a.x, imu.a.y, imu.a.z,
+    imu.g.x, imu.g.y, imu.g.z);
+  Serial.println(report);
+
+  delay(5000);
 }
 
 void loop()
@@ -43,5 +51,5 @@ void loop()
     imu.g.x, imu.g.y, imu.g.z);
   Serial.println(report);
 
-  delay(100);
+  delay(1000);
 }

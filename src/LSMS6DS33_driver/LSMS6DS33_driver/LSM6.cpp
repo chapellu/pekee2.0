@@ -1,6 +1,8 @@
 #include <LSM6.h>
 #include <Wire.h>
 #include <math.h>
+#include <unistd.h>
+#include <util/delay.h>
 
 // Defines ////////////////////////////////////////////////////////////////
 
@@ -102,20 +104,34 @@ void LSM6::enableDefault(void)
 		// Accelerometer
 
 		// 0x80 = 0b10000000
-		// ODR = 1000 (1.66 kHz (high performance)); FS_XL = 00 (+/-2 g full scale)
-		writeReg(CTRL1_XL, initAcc(1660,2));
-
+		// 104 Hz ; FS_XL = 00 (+/-2 g full scale)
+		writeReg(CTRL1_XL, initAcc(104,2));
+		// normal performance
+		writeReg(CTRL6_C, 0b00010000);
 		// Gyro
 
 		// 0x80 = 0b010000000
 		// ODR = 1000 (1.66 kHz (high performance)); FS_XL = 00 (245 dps)
-		writeReg(CTRL2_G, initGyro(1660,245));
-
+		writeReg(CTRL2_G, initGyro(104,245));
+		// normal performance
+		writeReg(CTRL7_G, 0b10000000);
 		// Common
 
 		// 0x04 = 0b00000100
 		// IF_INC = 1 (automatically increment register address)
 		writeReg(CTRL3_C, 0x04);
+		//Acc + Gyro no rounding
+		writeReg(CTRL5_C, 0b00000000);
+
+		//Buffer no threshold no decimation time stamp continious mode 104hz
+		writeReg(FIFO_CTRL1, 0b00000000);
+		writeReg(FIFO_CTRL2, 0b10000000);
+		writeReg(FIFO_CTRL3, 0b00001001);
+		writeReg(FIFO_CTRL4, 0b00001000);
+		writeReg(FIFO_CTRL5, 0b00100110);
+
+		//Time stamp counter enable
+		writeReg(TAP_CFG, 0b10000000);
 	}
 }
 
@@ -142,7 +158,7 @@ uint8_t LSM6::readReg(uint8_t reg)
 }
 
 // Reads the 3 accelerometer channels and stores them in vector a
-void LSM6::readAcc(void)
+void LSM6::readAcc(bool init)
 {
 	Wire.beginTransmission(address);
 	// automatic increment of register address is enabled by default (IF_INC in CTRL3_C)
@@ -167,22 +183,37 @@ void LSM6::readAcc(void)
 	uint8_t zha = Wire.read();
 
 	// combine high and low bytes
-	a.x = (int16_t)(xha << 8 | xla) + aZero.x;
-	a.y = (int16_t)(yha << 8 | yla)	+ aZero.y;
-	a.z = (int16_t)(zha << 8 | zla) + aZero.z;
+	if (init) {
+		a.x = (int32_t)((int32_t)(xha << 8 | xla) * conversionFactorAcc);
+		a.y = (int32_t)((int32_t)(yha << 8 | yla) * conversionFactorAcc);
+		a.z = (int32_t)((int32_t)(zha << 8 | zla) * conversionFactorAcc);
+	}
+	else {
+		a.x = (int32_t)((int32_t)(xha << 8 | xla) * conversionFactorAcc) + aZero.x;
+		a.y = (int32_t)((int32_t)(yha << 8 | yla) * conversionFactorAcc) + aZero.y;
+		a.z = (int32_t)((int32_t)(zha << 8 | zla) * conversionFactorAcc) + aZero.z;
+		Serial.print("Acc : "); Serial.print(a.x); Serial.print(" "); Serial.print(a.y); Serial.print(" "); Serial.println(a.z);
+	}
 }
 
 // Reads the 3 acc channels and stores them in vector aZero as negative
 void LSM6::zeroAcc(void)
 {
-	readAcc();
-	aZero.x = -a.x;
-	aZero.y = -a.y;
-	aZero.z = -a.z;
+	int i;
+	for(i=0; i<20;i++){
+		readAcc(true);
+		aZero.x-=a.x;
+		aZero.y-=a.y;
+		aZero.z-=a.z;
+		//_delay_ms(1);
+	}
+	aZero.x/=20;
+	aZero.y/=20;
+	aZero.z/=20;
 }
 
 // Reads the 3 gyro channels and stores them in vector g
-void LSM6::readGyro(void)
+void LSM6::readGyro(bool init)
 {
 	Wire.beginTransmission(address);
 	// automatic increment of register address is enabled by default (IF_INC in CTRL3_C)
@@ -207,18 +238,32 @@ void LSM6::readGyro(void)
 	uint8_t zhg = Wire.read();
 
 	// combine high and low bytes
-	g.x = (int16_t)(xhg << 8 | xlg) + gZero.x;
-	g.y = (int16_t)(yhg << 8 | ylg) + gZero.y;
-	g.z = (int16_t)(zhg << 8 | zlg) + gZero.z;
+	if (init) {
+		g.x = (int32_t)((int32_t)(xhg << 8 | xlg) * conversionFactorGyro);
+		g.y = (int32_t)((int32_t)(yhg << 8 | ylg) * conversionFactorGyro);
+		g.z = (int32_t)((int32_t)(zhg << 8 | zlg) * conversionFactorGyro);
+	}
+	else {
+		g.x = (int32_t)((int16_t)(xhg << 8 | xlg) * conversionFactorGyro) + gZero.x;
+		g.y = (int32_t)((int16_t)(yhg << 8 | ylg) * conversionFactorGyro) + gZero.y;
+		g.z = (int32_t)((int16_t)(zhg << 8 | zlg) * conversionFactorGyro) + gZero.z;
+		Serial.print("Gyro : "); Serial.print(g.x); Serial.print(" "); Serial.print(g.y); Serial.print(" "); Serial.println(g.z);
+	}
 }
 
 // Reads the 3 gyro channels and stores them in vector gZero as negative
 void LSM6::zeroGyro(void)
 {
-	readGyro();
-	gZero.x = -g.x;
-	gZero.y = -g.y;
-	gZero.z = -g.z;
+	int i;
+	for(i=0; i<20;i++){
+		readGyro();
+		gZero.x -= g.x;
+		gZero.y -= g.y;
+		gZero.z -= g.z;
+	}
+	gZero.x /= 20;
+	gZero.y /= 20;
+	gZero.z /= 20;
 }
 
 // Reads all 6 channels of the LSM6 and stores them in the object variables
@@ -242,7 +287,7 @@ void LSM6::vector_normalize(vector<float> *a)
 	a->z /= mag;
 }
 
-uint8_t LSM6::initAcc(int frequency = 0, int sensibility = 0, int filter = 0) {
+uint8_t LSM6::initAcc(int frequency, int sensibility, int filter) {
 	int8_t ctrl1_xl = 0b00000000;
 	switch (frequency)
 	{
@@ -282,15 +327,19 @@ uint8_t LSM6::initAcc(int frequency = 0, int sensibility = 0, int filter = 0) {
 	switch (sensibility)
 	{
 	case 2:
-		ctrl1_xl = ctrl1_xl | 0b00010000;
+		conversionFactorAcc = 0.061;
+		ctrl1_xl = ctrl1_xl | 0b00000000;
 		break;
 	case 4:
+		conversionFactorAcc = 0.122;
 		ctrl1_xl = ctrl1_xl | 0b00001000;
 		break;
 	case 8:
+		conversionFactorAcc = 0.244;
 		ctrl1_xl = ctrl1_xl | 0b00001100;
 		break;
 	case 16:
+		conversionFactorAcc = 0.488;
 		ctrl1_xl = ctrl1_xl | 0b00000100;
 		break;
 	default:
@@ -316,7 +365,7 @@ uint8_t LSM6::initAcc(int frequency = 0, int sensibility = 0, int filter = 0) {
 	return (ctrl1_xl);
 }
 
-uint8_t LSM6::initGyro(int frequency = 0, int sensibility = 0) {
+uint8_t LSM6::initGyro(int frequency, int sensibility) {
 	int8_t ctrl2_g = 0b00000000;
 	switch (frequency)
 	{
@@ -356,23 +405,44 @@ uint8_t LSM6::initGyro(int frequency = 0, int sensibility = 0) {
 	switch (sensibility)
 	{
 	case 125:
+		conversionFactorGyro = 4.375;
 		ctrl2_g = ctrl2_g | 0b00000010;
 	case 245:
+		conversionFactorGyro = 8.75;
 		ctrl2_g = ctrl2_g | 0b00000000;
 		break;
 	case 500:
+		conversionFactorGyro = 17.5;
 		ctrl2_g = ctrl2_g | 0b00000100;
 		break;
 	case 1000:
+		conversionFactorGyro = 35;
 		ctrl2_g = ctrl2_g | 0b00001000;
 		break;
 	case 2000:
+		conversionFactorGyro = 70;
 		ctrl2_g = ctrl2_g | 0b00001100;
 		break;
 	default:
 		break;
 	}
 	return (ctrl2_g);
+}
+
+void LSM6::readBuffer() {
+	Serial.println(readReg(FIFO_STATUS1));
+	Serial.println(readReg(FIFO_STATUS2));
+	Serial.println(readReg(FIFO_STATUS3));
+	Serial.println(readReg(FIFO_STATUS4));
+	Serial.println(readReg(FIFO_CTRL1));
+	Serial.println(readReg(FIFO_CTRL2));
+	Serial.println(readReg(FIFO_CTRL3));
+	Serial.println(readReg(FIFO_CTRL4));
+	Serial.println(readReg(FIFO_CTRL5));
+	Serial.println(readReg(FIFO_DATA_OUT_L));
+	Serial.println(readReg(FIFO_DATA_OUT_H));
+	Serial.println(readReg(STATUS_REG));
+	Serial.println();
 }
 
 // Private Methods //////////////////////////////////////////////////////////////

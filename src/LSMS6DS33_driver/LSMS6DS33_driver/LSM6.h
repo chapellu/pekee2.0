@@ -87,10 +87,10 @@ public:
 		MD2_CFG = 0x5F,
 	};
 
-	vector<int16_t> a; // accelerometer readings
-	vector<int16_t> g; // gyro readings
-	vector<int16_t> aZero; // accelerometer zero
-	vector<int16_t> gZero; // gyro zero
+	vector<int32_t> a; // accelerometer readings
+	vector<int32_t> g; // gyro readings
+	vector<int32_t> aZero; // accelerometer zero
+	vector<int32_t> gZero; // gyro zero
 
 	uint8_t last_status; // status of last I2C transmission
 
@@ -101,19 +101,20 @@ public:
 
 	void enableDefault(void);
 
-	uint8_t initAcc(int frequency, int sensibility, int filter);
-	uint8_t LSM6::initGyro(int frequency, int sensibility);
+	uint8_t initAcc(int frequency = 0, int sensibility = 0, int filter = 0);
+	uint8_t initGyro(int frequency = 0, int sensibility = 0);
 
 	void writeReg(uint8_t reg, uint8_t value);
 	uint8_t readReg(uint8_t reg);
 
-	void readAcc(void);
+	void readAcc(bool init = false);
 	void zeroAcc(void);
-	void readGyro(void);
+	void readGyro(bool init = false);
 	void zeroGyro(void);
+	
 	void read(void);
-
 	void zeros(void);
+	void readBuffer(void);
 
 	void setTimeout(uint16_t timeout);
 	uint16_t getTimeout(void);
@@ -132,6 +133,9 @@ private:
 	bool did_timeout;
 
 	int16_t testReg(uint8_t address, regAddr reg);
+
+	float conversionFactorAcc = 0.0;
+	float conversionFactorGyro = 0.0;
 };
 
 
