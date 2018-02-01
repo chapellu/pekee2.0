@@ -24,6 +24,46 @@ void setup()
  digitalWrite(pinI4,LOW);
  analogWrite(speedpinB,50);
 }
+
+void avance(int vitesse){
+  if (vitesse <0) {
+    digitalWrite(pinI1,HIGH);// DC motor rotates clockwise
+    digitalWrite(pinI2,LOW);
+    digitalWrite(pinI3,HIGH);// DC motor rotates clockwise
+    digitalWrite(pinI4,LOW);
+    analogWrite(speedpinA,abs(vitesse));
+    analogWrite(speedpinB,abs(vitesse));
+  }
+  else{
+    digitalWrite(pinI1,HIGH);// DC motor rotates clockwise
+    digitalWrite(pinI2,LOW);
+    digitalWrite(pinI3,HIGH);// DC motor rotates clockwise
+    digitalWrite(pinI4,LOW);
+    analogWrite(speedpinA,abs(vitesse));
+    analogWrite(speedpinB,abs(vitesse));
+  }
+}
+
+void rotate(int angle){
+  vitesse = 50;
+  if (vitesse <0) {
+    digitalWrite(pinI1,HIGH);// DC motor rotates clockwise
+    digitalWrite(pinI2,LOW);
+    digitalWrite(pinI3,LOW);// DC motor rotates clockwise
+    digitalWrite(pinI4,HIGH);
+    analogWrite(speedpinA,abs(vitesse));
+    analogWrite(speedpinB,abs(vitesse));
+  }
+  else{
+    digitalWrite(pinI1,LOW);// DC motor rotates clockwise
+    digitalWrite(pinI2,HIGH);
+    digitalWrite(pinI3,HIGH);// DC motor rotates clockwise
+    digitalWrite(pinI4,LOW);
+    analogWrite(speedpinA,abs(vitesse));
+    analogWrite(speedpinB,abs(vitesse));
+  }
+}
+
 void loop()
 {
  delay(2000);
