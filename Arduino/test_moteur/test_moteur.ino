@@ -19,12 +19,12 @@ void setup()
  Serial.begin(9600);
  digitalWrite(pinI1,HIGH);// DC motor rotates clockwise
  digitalWrite(pinI2,LOW);
- analogWrite(speedpinA,50);
+ analogWrite(speedpinA,100);
  digitalWrite(pinI3,HIGH);// DC motor rotates clockwise
  digitalWrite(pinI4,LOW);
- analogWrite(speedpinB,50);
+ analogWrite(speedpinB,100);
 }
-
+/*
 void avance(int vitesse){
   if (vitesse <0) {
     digitalWrite(pinI1,HIGH);// DC motor rotates clockwise
@@ -63,7 +63,7 @@ void rotate(int angle){
     analogWrite(speedpinB,abs(vitesse));
   }
 }
-
+*/
 void loop()
 {
  delay(2000);
