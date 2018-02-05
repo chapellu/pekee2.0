@@ -1,0 +1,197 @@
+/*******************************************************************************
+ *  Entrees-Sorties - IAI - INFO 741
+ *  fichier: prog_serie_etu.c
+ *  date de creation:  18 decembre 2017
+ *  auteur:   J.J. CURTELIN & G. GINOLHAC
+ *
+ *   Description
+ *        Lecture de caracteres recus sur un port serie, en mode bloquant
+******************************************************************************* */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <string.h>
+
+/*** constantes definies pour la gestion du port serie ****/
+/* les vitesses de transmission (baudrate) sont predefinies dans <asm/termbits.h>, qui est
+   inclus dans <termios.h> */
+#define BAUDRATE B9600
+
+/* changer cette definition pour utiliser un autre port */
+#define PORTSERIE "/dev/????" // A COMPLETER
+
+#define FALSE 0
+#define TRUE 1
+#define Xon (0x11)
+#define Xoff (0x13)
+#define cEOF (4)
+
+#define MAXCAR 255
+
+// variable globale permettant de sauvegarder/restituer la configuration originale du port utilise
+static struct termios oldtio;
+
+/*************************************************************************** afficher
+ fonction: afficher (portcom, msg)
+parametres:
+    portcom : identificateur de port (entier retourne par un appel a open)
+    msg : chaine de caracteres (message à envoyer sur le port)
+valeur retournee:
+    nb de caracteres envoyes (cf doc write)
+
+description:
+     envoie un message (texte à afficher) sur le port portcom, n'attend pas de reponse
+*************************************************************************************/
+int  afficher(int portcom, char *msg){
+    // A COMPLETER AVEC WRITE
+}
+
+/*****************************************************************************lecture_port
+ fonction: lecture_port ()
+parametres:
+    portcom : identificateur de port (entier retourne par un appel a open)
+
+valeur retournee:
+   caractère reçu
+
+description:
+     attend un caractère du port série
+*************************************************************************************/
+char lecture_port(int portcom){
+     // A COMPLETER AVEC READ
+}
+
+
+/*****************************************************************************init_serie
+ fonction: init_serie(devpath)
+parametres:
+    devpath : chemin du port à initialiser (du type /dev/ttyS0 )
+
+valeur retournee:
+   un entier positif si le port a pu etre initialise
+   -1 si erreur d'ouverture
+
+description:
+     ouvre et initialise le port série
+*************************************************************************************/
+
+int init_serie(char *devpath){
+struct termios newtio;
+ int portcom;
+ /* Ouvre le port serie en lecture et ecriture
+    (on empeche le processus d'etre tue par CTRL-C.)
+    ATTENTION: mode bloquant necessaire pour attendre l'appui d'une touche  */
+
+    portcom = open(devpath, O_RDWR | O_NOCTTY);
+
+    if (portcom <0) {   /* sort du programme en cas de probleme d'acces au port*/
+        perror(devpath);
+        exit(-1);
+    }
+
+    tcgetattr(portcom,&oldtio); /* sauve la configuration courante du port serie */
+    bzero(&newtio, sizeof(newtio)); /* mets a zero la structure utilisee pour la configuration
+                                        du port (tous les champs ont une valeur initiale a zero)  */
+
+    /*
+        BAUDRATE: vitesse de transmission
+        CS8     : 8n1 (8bit, pas de parite, 1 bit de stop)
+        CLOCAL  : connexion locale, pas de controle de modem
+        CREAD   : autorise la reception de caracteres
+    */
+    newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD ;
+
+    /*-------------------------------------------------------------*/
+    /*   Préparation de la nouvelle configuration */
+    /*-------------------------------------------------------------*/
+    /*  configuration du mode d'entree (voir doc)
+        IGNPAR  : ignore les octets avec erreurs de parite     */
+    newtio.c_iflag = IGNPAR ;
+
+    /*    "Raw output" (mode sortie brute => caractere par caractere, sans traitement)    */
+    newtio.c_oflag = 0;
+
+    /*    configuration du mode local (dit comment les donnees sont traitees par le driver local, voir doc)
+          ICANON  : valide le mode canonique en entree (qui ne traite les entrees
+                 qu'apres reception d'une ligne entiere, terminee par CR ou NL)
+          Ici ce mode n'est pas souhaitable car l'appui d'une touche doit etre pris en compte immediatement.
+          La ligne es donc mise en commentaire. Voir documentation en ligne (man stty)        */
+     //   newtio.c_lflag = ICANON;
+
+    /*
+        initialise tous les  caracteres de controle
+        les valeurs par defaut peuvent etre trouvees dans "/usr/include/termios.h",
+        les valeurs usuelles sont indiquees en commentaire
+    */
+    newtio.c_cc[VINTR]    = 0;     /* Ctrl-c */
+    newtio.c_cc[VQUIT]    = 0;     /* Ctrl-\ */
+    newtio.c_cc[VERASE]   = 0;     /* del */
+    newtio.c_cc[VKILL]    = 0;     /* @ */
+    newtio.c_cc[VEOF]     = cEOF;     /* Ctrl-d */
+    newtio.c_cc[VTIME]    = 0;     /* inter-character timer unused */
+    newtio.c_cc[VMIN]     = 1;     /* lecture bloquante jusqu'a l'arrivee d' 1 caractere */
+    newtio.c_cc[VSWTC]    = 0;     /* '\0' */
+    newtio.c_cc[VSTART]   = Xon;     /* Ctrl-q */
+    newtio.c_cc[VSTOP]    = Xoff;     /* Ctrl-s */
+    newtio.c_cc[VSUSP]    = 0;     /* Ctrl-z */
+    newtio.c_cc[VEOL]     = 0;     /* '\0' */
+    newtio.c_cc[VREPRINT] = 0;     /* Ctrl-r */
+    newtio.c_cc[VDISCARD] = 0;     /* Ctrl-u */
+    newtio.c_cc[VWERASE]  = 0;     /* Ctrl-w */
+    newtio.c_cc[VLNEXT]   = 0;     /* Ctrl-v */
+    newtio.c_cc[VEOL2]    = 0;     /* '\0' */
+
+    /*
+       on vide le flux associe au port serie et on active la nouvelle configuration
+    */
+    tcflush(portcom, TCIFLUSH);
+    tcsetattr(portcom,TCSANOW,&newtio);
+
+	return portcom;
+}
+
+/*****************************************************************************close_serie
+ fonction: close_serie(portcom)
+parametres:
+    portcom : desripteur du port à fermer
+
+valeur retournee: aucune
+
+description:
+   ferme le port designe par portcom apres avoir restaure sa configuration d'origine
+*************************************************************************************/
+void close_serie(int portcom){
+
+     /* reconfigure le port avec la configuration anterieure */
+        tcflush(portcom, TCIFLUSH);
+        tcsetattr(portcom,TCSANOW,&oldtio);
+        close(portcom);
+}
+
+/******************************************************************************************* main
+ * programme de test de la liaison série.
+ * Le programme configure et initialise ici le port ?? (9600bd, 8 bits, sans parite, 1 stop)
+ * Puis soit lecture, ecriture, et echo
+ ************************************************************************************************/
+
+int main(int argc, char **argv){
+
+  char c[2]; // chaine de 2 caracteres permettant d'afficher chaque caractere recu
+             // par la liaison serie en le renvoyant dans une chaine
+  int portcom;
+
+  ?? // Initialisation
+  afficher(portcom,"initialisation\r\n\n");
+  c[1]=0;
+
+  // Lecture, Ecriture, et écho
+
+  // Fermeture port serie
+  ??
+
+  return 0;
+}
