@@ -1,10 +1,10 @@
 // Calculate based on max input size expected for one command
-#define INPUT_SIZE 5
+#define INPUT_SIZE 6
+#define MESSAGE_SIZE 5
+#define PARAMETER_SIZE
 
-// Get next command from Serial (add 1 for final 0)
-char input[INPUT_SIZE + 1];
+char input[INPUT_SIZE];
 boolean stringComplete = false;
-byte size;
 
 char functionCalled;
 int params[5];
@@ -32,7 +32,7 @@ void setup() {
 
 void serialEvent() {
   if(Serial.available()>0){
-    size = Serial.readBytes(input, 5);
+    Serial.readBytes(input, MESSAGE_SIZE);
     stringComplete = true;
   }
 }
