@@ -1,25 +1,23 @@
 // Calculate based on max input size expected for one command
-#define INPUT_SIZE 5
+#define INPUT_SIZE 9
+#define COMMAND_SIZE 4
 
-// Get next command from Serial (add 1 for final 0)
-char input[INPUT_SIZE + 1];
+char input[INPUT_SIZE];
 boolean stringComplete = false;
-byte size;
 
 char functionCalled;
-int params[5];
+int params[2];
 
 int pinI1=13;//define I1 port
 int pinI2=12;//define I2 port
 int speedpinA=11;//define EA(PWM speed regulation)port
 
-int pinI3=10;//define I1 port
-int pinI4=9;//define I2 port
-int speedpinB=8;//define EA(PWM speed regulation)port
+int pinI3=10;//define I3 port
+int pinI4=9;//define I4 port
+int speedpinB=8;//define EB(PWM speed regulation)port
 
 
 void setup() {
-  // initialize serial:
   pinMode(pinI1,OUTPUT);//define this port as output
   pinMode(pinI2,OUTPUT);
   pinMode(speedpinA,OUTPUT);
@@ -27,50 +25,56 @@ void setup() {
   pinMode(pinI3,OUTPUT);//define this port as output
   pinMode(pinI4,OUTPUT);
   pinMode(speedpinB,OUTPUT);
-  Serial.begin(115200);
+  Serial.begin(115200); // initialize serial
 }
 
 void serialEvent() {
   if(Serial.available()>0){
-    size = Serial.readBytes(input, 5);
+    size = Serial.readBytes(input, INPUT_SIZE);
     stringComplete = true;
   }
 }
 
 void commandReceived(){
   functionCalled = input[0];
-  char temp[4];
-  for (int i = 1; i<5; i++){
-    temp[i-1] = input[i];
-  }
-  params[0] = atoi(temp);
-  
- 
+  char temp1[COMMAND_SIZE];
+  char temp2[COMMAND_SIZE];
+  memcpy(temp1, &input[1], COMMAND_SIZE*sizeof(char));
+  memcpy(temp2, &input[6], COMMAND_SIZE*sizeof(char));
+  Serial.println(temp1);
+  Serial.println(temp2);
+  params[0] = atoi(temp1);
+  params[1] = atoi(temp2);
 }
 
-void avance(int vit){
-  int vitesse = vit * 2.55;
-  if (vitesse <0) {
-    digitalWrite(pinI1,HIGH);// DC motor rotates clockwise
-    digitalWrite(pinI2,LOW);
-    digitalWrite(pinI3,LOW);// DC motor rotates clockwise
-    digitalWrite(pinI4,HIGH);
-  }
-  else if (vitesse == 0){
+void avance(int vitesse){
+  if (vitesse == 0){
     digitalWrite(pinI1,HIGH);// DC motor rotates clockwise
     digitalWrite(pinI2,HIGH);
     digitalWrite(pinI3,HIGH);// DC motor rotates clockwise
-    digitalWrite(pinI4,HIGH);
+    digitalWrite(pinI4,HIGH); 
+    analogWrite(speedpinA,0);
+    analogWrite(speedpinB,0); 
   }
-  else{
-    digitalWrite(pinI1,LOW);// DC motor rotates clockwise
-    digitalWrite(pinI2,HIGH);
-    digitalWrite(pinI3,HIGH);// DC motor rotates clockwise
-    digitalWrite(pinI4,LOW);
-
-  }
-  analogWrite(speedpinA,abs(vitesse));
-  analogWrite(speedpinB,abs(vitesse));
+  else {
+    vitesse = abs(vitesse) > 100 ? 100 * sign(vitesse) : vitesse;
+    if (vitesse <0) {
+      // Backward
+      digitalWrite(pinI1,HIGH);// DC motor rotates clockwise
+      digitalWrite(pinI2,LOW);
+      digitalWrite(pinI3,LOW);// DC motor rotates clockwise
+      digitalWrite(pinI4,HIGH);
+    }
+    else{
+      // Forward
+      digitalWrite(pinI1,LOW);// DC motor rotates clockwise
+      digitalWrite(pinI2,HIGH);
+      digitalWrite(pinI3,HIGH);// DC motor rotates clockwise
+      digitalWrite(pinI4,LOW);
+    }
+    int vit = abs(vitesse*2.55);
+    analogWrite(speedpinA,vit);
+    sanalogWrite(speedpinB,vit);
 }
 
 void rotate(int angle, int vit = 50){
@@ -97,25 +101,51 @@ void rotate(int angle, int vit = 50){
   analogWrite(speedpinB,abs(vitesse));
 }
 
+void motorsSpeed(int speedLeft, int speedRight){
+  if (speedLeft == 0 && speedRight == 0){
+    digitalWrite(pinI1,HIGH);
+    digitalWrite(pinI2,HIGH);
+    digitalWrite(pinI3,HIGH);
+    digitalWrite(pinI4,HIGH);
+    analogWrite(speedpinA,0);
+    analogWrite(speedpinB,0);  
+  }
+  else {
+    speedLeft = abs(speedLeft) > 100 ? 100 * sign(speedLeft) : speedLeft;
+    speedRight = abs(speedRight) > 100 ? 100 * sign(speedRight) : speedRight;
+    if (speedLeft > 0){
+      digitalWrite(pinI1,HIGH);// DC motor rotates clockwise
+      digitalWrite(pinI2,LOW);
+    }
+    else {
+      digitalWrite(pinI1,LOW);// DC motor rotates anticlockwise
+      digitalWrite(pinI2,HIGH);
+    if (speedRight > 0){
+      digitalWrite(pinI3,LOW);// DC motor rotates clockwise
+      digitalWrite(pinI4,HIGH);
+    }
+    else{
+      digitalWrite(pinI3,LOW);// DC motor rotates anticlockwise
+      digitalWrite(pinI4,HIGH);
+    }
+    analogWrite(speedpinA,abs(speedLeft));
+    analogWrite(speedpinB,abs(speedRight));
+  }
+}
+
 void arretRobot(){
-  int vitesse = 0;
-  digitalWrite(pinI1,HIGH);// DC motor rotates clockwise
+  digitalWrite(pinI1,HIGH);
   digitalWrite(pinI2,HIGH);
-  digitalWrite(pinI3,HIGH);// DC motor rotates clockwise
+  digitalWrite(pinI3,HIGH);
   digitalWrite(pinI4,HIGH);
 
-  analogWrite(speedpinA,abs(vitesse));
-  analogWrite(speedpinB,abs(vitesse));
+  analogWrite(speedpinA,0);
+  analogWrite(speedpinB,0);
 }
 
 void loop() {
-  
-  if(stringComplete){// Add the final 0 to end the C string
+  if(stringComplete){
     commandReceived();
-    //Serial.println(functionCalled);
-    //for (int i =0;i<sizeof(params)/sizeof(int);i++){
-    //  Serial.println(params[i]);
-    //}
     if(functionCalled == 'a'){
       //Serial.print("avancer..");
       //Serial.println(params[0]);
@@ -126,13 +156,19 @@ void loop() {
       //Serial.println(params[0]);
       rotate(params[0]);
     }
+    else if(functionCalled == 'm'){
+      //Serial.print("motorsSpeed..");
+      //Serial.print(params[0]);
+      //Serial.print(params[1]);
+      motorsSpeed(params[0],params[1]);
+    }
     else if(functionCalled == 's'){
       arretRobot();
     }
   }
 }
 
-
+ 
 
 
 
