@@ -36,7 +36,7 @@
 # Install pyserial from http://sourceforge.net/projects/pyserial/files/
 # Install VPython from http://vpython.org/contents/download_windows.html
 
-from visual import *
+from vpython import *
 import serial
 import string
 import math
@@ -46,8 +46,8 @@ from time import time
 grad2rad = 3.141592/180.0
 
 # Check your COM port and baud rate
-ser = serial.Serial(port='COM9',baudrate=115200, timeout=1)
-
+ser = serial.Serial(port='COM11',baudrates=115200, timeout=1)
+ 
 # Main scene
 scene=display(title="Pololu MinIMU-9 + Arduino AHRS")
 scene.range=(1.2,1.2,1.2)
@@ -114,7 +114,7 @@ while 1:
     line = ser.readline()
     if line.find("!ANG:") != -1:          # filter out incomplete (invalid) lines
         line = line.replace("!ANG:","")   # Delete "!ANG:"
-        print line
+        print(line)
         f.write(line)                     # Write to the output log file
         words = string.split(line,",")    # Fields split
         if len(words) > 2:
@@ -123,7 +123,7 @@ while 1:
                 pitch = float(words[1])*grad2rad
                 yaw = float(words[2])*grad2rad
             except:
-                print "Invalid line"
+                print("Invalid line")
 
             axis=(cos(pitch)*cos(yaw),-cos(pitch)*sin(yaw),sin(pitch)) 
             up=(sin(roll)*sin(yaw)+cos(roll)*sin(pitch)*cos(yaw),sin(roll)*cos(yaw)-cos(roll)*sin(pitch)*sin(yaw),-cos(roll)*cos(pitch))

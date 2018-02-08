@@ -4,7 +4,7 @@ import sys
 import time
 import serial
 
-ser = serial.Serial('/dev/ttyACM1',115200)
+ser = serial.Serial('/dev/ttyACM0',115200)
 pygame.init()
 pygame.joystick.init()
 
@@ -23,13 +23,10 @@ print (_joystick.get_axis(0))
 
 axes = [ 0.0 ] * _joystick.get_numaxes()
 buttons = [ False ] * _joystick.get_numbuttons()
-
-value_motorG_old = 0
-value_motorD_old = 0
-value_axes_z_old = 0
+value_xaxes_old = 0
+value_yaxes_old = 0
 old_message = "a0000"
-
-seuil = 5
+seuil = 10
 arret = False
 keep_alive=True
 
@@ -45,51 +42,38 @@ while keep_alive:
             e_arret = event_arret.dict
             if 'value' in e_arret.keys():
                 axes[e_arret['axis']] = e_arret['value']
-                if axes[0] == 0 and axes[1] == 0 and axes[2] == 0:
+                if axes[0] == 0 and axes[1] == 0:
                     arret = False
-        
         e = event.dict
         axes[e['axis']] = e['value']
-        
-        if axes[0] == 0 and axes[1] == 0:
-            if abs(axes[2]) > 0.1:
-                value_axes_z = int(50*axes[2]*(axes[3]-1))
-                if abs(value_axes_z_old-value_axes_z)>seuil:
-                    message = "r{:4}".format(value_axes_z)
-                    value_axes_z_old = value_axes_z
-            else:
-                message = "a00000000"
-            
-        elif axes[2]==0:
-            if ((abs(axes[0]) > 0.2 or abs(axes[1])) > 0.2):
-                value_motorG = int(50*axes[1]*(axes[3]-1)*(1+axes[0]))
-                value_motorD = int(50*axes[1]*(axes[3]-1)*(1-axes[0]))
-                if((abs(value_motorG_old - value_motorG) > seuil) or (abs(value_motorD_old - value_motorD) > seuil)):
-                    message = "m{:4}{:4}".format(value_motorG,value_motorD)
-                    value_motorG_old = value_motorG
-                    value_motorD_old = value_motorD
-            
-            elif abs(axes[0]) > 0 and abs(axes[1]) == 0:
-                message = "a00000000"
-            
-            else:
-                message = "a00000000"
-            
-        
+        if abs(axes[1]) > 0.2:
+            value_axes = int(axes[1]*(axes[3]-1)*50)
+            if(abs(value_axes - value_yaxes_old) > seuil):
+                message = "a{:4}".format(value_axes)
+                value_yaxes_old = value_axes
+        elif abs(axes[0]) > 0.2:
+            value_axes = int(axes[0]*(axes[3]-1)*50)
+            if(abs(value_axes - value_xaxes_old) > seuil):
+                message = "r{:4}".format(value_axes)
+                value_xaxes_old = value_axes
+        else:
+            message = "a0000"
                         
     elif event.type in [pygame.JOYBUTTONUP, pygame.JOYBUTTONDOWN ]:
         e = event.dict
         buttons[e['button']] ^= True
+        print(e['button'])
         if(buttons[7] == True):
             keep_alive = False
             buttons[7] = False
         if(buttons[0] == True):
-            print("STOP")
             arret = True
-            message = "s00000000"
+            print("STOP")
+            message = "s0000"
             ser.write(str.encode(message))
             buttons[0] = False
-            
+            print("ENVOI")
+
     if (message != old_message and not arret ):
         print(message)
         ser.write(str.encode(message))

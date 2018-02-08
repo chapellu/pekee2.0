@@ -34,4 +34,5 @@ while keep_alive:
         print(axes)
     elif event.type in [pygame.JOYBUTTONUP, pygame.JOYBUTTONDOWN ]:
         e = event.dict
+        print(e)
         buttons[e['button']] ^= True

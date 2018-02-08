@@ -196,6 +196,8 @@ void setup()
   timer=millis();
   delay(20);
   counter=0;
+  
+  Serial.println("INITIALISATION AND CALIBRATION SENSOR DONE");
 }
 
 void loop() //Main Loop

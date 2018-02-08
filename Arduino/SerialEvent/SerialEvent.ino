@@ -29,8 +29,8 @@ void setup() {
 }
 
 void serialEvent() {
-  if(Serial.available()>0){
-    size = Serial.readBytes(input, INPUT_SIZE);
+  while(Serial.available()>0){
+    Serial.readBytes(input, INPUT_SIZE);
     stringComplete = true;
   }
 }
@@ -40,21 +40,26 @@ void commandReceived(){
   char temp1[COMMAND_SIZE];
   char temp2[COMMAND_SIZE];
   memcpy(temp1, &input[1], COMMAND_SIZE*sizeof(char));
-  memcpy(temp2, &input[6], COMMAND_SIZE*sizeof(char));
-  Serial.println(temp1);
-  Serial.println(temp2);
+  memcpy(temp2, &input[5], COMMAND_SIZE*sizeof(char));
   params[0] = atoi(temp1);
   params[1] = atoi(temp2);
+  stringComplete = false;
+}
+
+int sign ( int number){
+  return (number >= 0 ? 1 : -1);
 }
 
 void avance(int vitesse){
   if (vitesse == 0){
-    digitalWrite(pinI1,HIGH);// DC motor rotates clockwise
-    digitalWrite(pinI2,HIGH);
-    digitalWrite(pinI3,HIGH);// DC motor rotates clockwise
-    digitalWrite(pinI4,HIGH); 
-    analogWrite(speedpinA,0);
-    analogWrite(speedpinB,0); 
+    /*digitalWrite(pinI1,HIGH);// DC motor rotates clockwise
+     digitalWrite(pinI2,HIGH);
+     digitalWrite(pinI3,HIGH);// DC motor rotates clockwise
+     digitalWrite(pinI4,HIGH); 
+     analogWrite(speedpinA,0);
+     analogWrite(speedpinB,0); */
+
+    arretRobot();
   }
   else {
     vitesse = abs(vitesse) > 100 ? 100 * sign(vitesse) : vitesse;
@@ -74,55 +79,63 @@ void avance(int vitesse){
     }
     int vit = abs(vitesse*2.55);
     analogWrite(speedpinA,vit);
-    sanalogWrite(speedpinB,vit);
+    analogWrite(speedpinB,vit);
+  }
 }
 
 void rotate(int angle, int vit = 50){
   int vitesse = vit * 2.55;
-  if (angle <0) {
-    digitalWrite(pinI1,LOW);// DC motor rotates clockwise
-    digitalWrite(pinI2,HIGH);
-    digitalWrite(pinI3,LOW);// DC motor rotates clockwise
-    digitalWrite(pinI4,HIGH);
-  }
-  else if (vitesse == 0){
-    digitalWrite(pinI1,HIGH);// DC motor rotates clockwise
-    digitalWrite(pinI2,HIGH);
-    digitalWrite(pinI3,HIGH);// DC motor rotates clockwise
-    digitalWrite(pinI4,HIGH);
+  if (vitesse == 0){
+    /*digitalWrite(pinI1,HIGH);// DC motor rotates clockwise
+     digitalWrite(pinI2,HIGH);
+     digitalWrite(pinI3,HIGH);// DC motor rotates clockwise
+     digitalWrite(pinI4,HIGH);*/
+
+    arretRobot();
   }
   else{
-    digitalWrite(pinI1,HIGH);// DC motor rotates clockwise
-    digitalWrite(pinI2,LOW);
-    digitalWrite(pinI3,HIGH);// DC motor rotates clockwise
-    digitalWrite(pinI4,LOW);
+    if (angle <0) {
+      digitalWrite(pinI1,LOW);// DC motor rotates clockwise
+      digitalWrite(pinI2,HIGH);
+      digitalWrite(pinI3,LOW);// DC motor rotates clockwise
+      digitalWrite(pinI4,HIGH);
+    }
+    else{
+      digitalWrite(pinI1,HIGH);// DC motor rotates clockwise
+      digitalWrite(pinI2,LOW);
+      digitalWrite(pinI3,HIGH);// DC motor rotates clockwise
+      digitalWrite(pinI4,LOW);
+    }
+    analogWrite(speedpinA,abs(vitesse));
+    analogWrite(speedpinB,abs(vitesse));
   }
-  analogWrite(speedpinA,abs(vitesse));
-  analogWrite(speedpinB,abs(vitesse));
 }
 
 void motorsSpeed(int speedLeft, int speedRight){
   if (speedLeft == 0 && speedRight == 0){
-    digitalWrite(pinI1,HIGH);
+    /*digitalWrite(pinI1,HIGH);
     digitalWrite(pinI2,HIGH);
     digitalWrite(pinI3,HIGH);
     digitalWrite(pinI4,HIGH);
     analogWrite(speedpinA,0);
-    analogWrite(speedpinB,0);  
+    analogWrite(speedpinB,0); */
+   
+   arretRobot(); 
   }
   else {
-    speedLeft = abs(speedLeft) > 100 ? 100 * sign(speedLeft) : speedLeft;
-    speedRight = abs(speedRight) > 100 ? 100 * sign(speedRight) : speedRight;
+    speedLeft = abs(speedLeft) > 100 ? 100 * sign(speedLeft)*2.55 : speedLeft*2.55;
+    speedRight = abs(speedRight) > 100 ? 100 * sign(speedRight)*2.55 : speedRight*2.55;
     if (speedLeft > 0){
-      digitalWrite(pinI1,HIGH);// DC motor rotates clockwise
-      digitalWrite(pinI2,LOW);
+      digitalWrite(pinI1,LOW);// DC motor rotates clockwise
+      digitalWrite(pinI2,HIGH);
     }
     else {
-      digitalWrite(pinI1,LOW);// DC motor rotates anticlockwise
-      digitalWrite(pinI2,HIGH);
+      digitalWrite(pinI1,HIGH);// DC motor rotates anticlockwise
+      digitalWrite(pinI2,LOW);
+    }
     if (speedRight > 0){
-      digitalWrite(pinI3,LOW);// DC motor rotates clockwise
-      digitalWrite(pinI4,HIGH);
+      digitalWrite(pinI3,HIGH);// DC motor rotates clockwise
+      digitalWrite(pinI4,LOW);
     }
     else{
       digitalWrite(pinI3,LOW);// DC motor rotates anticlockwise
@@ -163,12 +176,16 @@ void loop() {
       motorsSpeed(params[0],params[1]);
     }
     else if(functionCalled == 's'){
+      //Serial.print("stop..");
       arretRobot();
     }
   }
 }
 
- 
+
+
+
+
 
 
 
