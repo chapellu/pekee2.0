@@ -1,0 +1,5 @@
+*.pyc
+PyQuadStick.egg-info
+build
+dist
+*.swp
