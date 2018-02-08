@@ -40,7 +40,7 @@ void printdata(void)
       Serial.print(",");
       Serial.print(ToDeg(yaw));
       #endif      
-      #if PRINT_ANALOGS==1
+      /*#if PRINT_ANALOGS==1
       Serial.print(",AN:");
       Serial.print(AN[0]);  //(int)read_adc(0)
       Serial.print(",");
@@ -79,7 +79,7 @@ void printdata(void)
       Serial.print(DCM_Matrix[2][1]);
       Serial.print (",");
       Serial.print(DCM_Matrix[2][2]);
-      #endif
+      #endif*/
       Serial.println();
       
 }

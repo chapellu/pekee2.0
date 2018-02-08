@@ -38,7 +38,7 @@ with MinIMU-9-Arduino-AHRS. If not, see <http://www.gnu.org/licenses/>.
 // Positive pitch : nose up
 // Positive roll : right wing down
 // Positive yaw : clockwise
-int SENSOR_SIGN[9] = {1,1,1,-1,-1,-1,1,1,1}; //Correct directions x,y,z - gyro, accelerometer, magnetometer
+//int SENSOR_SIGN[9] = {1,1,1,-1,-1,-1,1,1,1}; //Correct directions x,y,z - gyro, accelerometer, magnetometer
 // Uncomment the below line to use this axis definition:
    // X axis pointing forward
    // Y axis pointing to the left
@@ -46,7 +46,7 @@ int SENSOR_SIGN[9] = {1,1,1,-1,-1,-1,1,1,1}; //Correct directions x,y,z - gyro, 
 // Positive pitch : nose down
 // Positive roll : right wing down
 // Positive yaw : counterclockwise
-//int SENSOR_SIGN[9] = {1,-1,-1,-1,1,1,1,-1,-1}; //Correct directions x,y,z - gyro, accelerometer, magnetometer
+int SENSOR_SIGN[9] = {1,-1,-1,-1,1,1,1,-1,-1}; //Correct directions x,y,z - gyro, accelerometer, magnetometer
 
 // tested with Arduino Uno with ATmega328 and Arduino Duemilanove with ATMega168
 
@@ -200,7 +200,7 @@ void setup()
 
 void loop() //Main Loop
 {
-  if((millis()-timer)>=20)  // Main loop runs at 50Hz
+  if((millis()-timer)>=50)  // Main loop runs at 50Hz
   {
     counter++;
     timer_old = timer;

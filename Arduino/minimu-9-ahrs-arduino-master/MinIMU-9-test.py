@@ -46,9 +46,9 @@ from time import time
 grad2rad = 3.141592/180.0
 
 # Check your COM port and baud rate
-ser = serial.Serial(port='COM9',baudrate=115200, timeout=1)
+ser = serial.Serial(port='COM11',baudrate=115200, timeout=1)
 
-# Main scene
+## Main scene
 scene=display(title="Pololu MinIMU-9 + Arduino AHRS")
 scene.range=(1.2,1.2,1.2)
 #scene.forward = (0,-1,-0.25)
@@ -56,7 +56,7 @@ scene.forward = (1,0,-0.25)
 scene.up=(0,0,1)
 
 # Second scene (Roll, Pitch, Yaw)
-scene2 = display(title='Pololu MinIMU-9 + Arduino AHRS',x=0, y=0, width=500, height=200,center=(0,0,0), background=(0,0,0))
+scene2 = display(title='Pololu MinIMU-9 + Arduino AHRS2',x=0, y=0, width=500, height=200,center=(0,0,0), background=(0,0,0))
 scene2.range=(1,1,1)
 scene.width=500
 scene.y=200
@@ -92,13 +92,13 @@ L3 = label(pos=(0.7,0.3,0),text="-",box=0,opacity=0)
 scene.select()
 # Reference axis (x,y,z)
 arrow(color=color.green,axis=(1,0,0), shaftwidth=0.02, fixedwidth=1)
-arrow(color=color.green,axis=(0,-1,0), shaftwidth=0.02 , fixedwidth=1)
-arrow(color=color.green,axis=(0,0,-1), shaftwidth=0.02, fixedwidth=1)
+arrow(color=color.green,axis=(0,1,0), shaftwidth=0.02 , fixedwidth=1)
+arrow(color=color.green,axis=(0,0,1), shaftwidth=0.02, fixedwidth=1)
 # labels
-label(pos=(0,0,0.8),text="Pololu MinIMU-9 + Arduino AHRS",box=0,opacity=0)
+label(pos=(0,0,0.8),text="Pololu MinIMU-9 + Arduino AHRS1",box=0,opacity=0)
 label(pos=(1,0,0),text="X",box=0,opacity=0)
-label(pos=(0,-1,0),text="Y",box=0,opacity=0)
-label(pos=(0,0,-1),text="Z",box=0,opacity=0)
+label(pos=(0,1,0),text="Y",box=0,opacity=0)
+label(pos=(0,0,1),text="Z",box=0,opacity=0)
 # IMU object
 platform = box(length=1, height=0.05, width=1, color=color.blue)
 p_line = box(length=1,height=0.08,width=0.1,color=color.yellow)
@@ -110,7 +110,9 @@ f = open("Serial"+str(time())+".txt", 'w')
 roll=0
 pitch=0
 yaw=0
+
 while 1:
+    sleep(0.01)  
     line = ser.readline()
     if line.find("!ANG:") != -1:          # filter out incomplete (invalid) lines
         line = line.replace("!ANG:","")   # Delete "!ANG:"
@@ -143,6 +145,7 @@ while 1:
             arrow_course.axis=(0.2*sin(yaw),0.2*cos(yaw),0)
             L1.text = str(float(words[0]))
             L2.text = str(float(words[1]))
-            L3.text = str(float(words[2]))        
+            L3.text = str(float(words[2])) 
+        
 ser.close
 f.close
